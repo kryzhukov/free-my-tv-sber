@@ -3,6 +3,24 @@
 Сборка [Free My TV](https://github.com/simbasjungles/free-my-tv) с исправлениями под телевизоры **Salute TV (Сбер)**
 и отдельное приложение **«Сбер-Стоп»**, которое не даёт телевизору вернуть отключённые приложения Сбера.
 
+## Скриншоты
+
+| Главный экран | Курсы валют (выдвижная панель) |
+|---|---|
+| ![Главный экран](docs/screenshots/home.png) | ![Курсы валют](docs/screenshots/currency-rates.png) |
+
+| Настройки — валюты | «Телеканалы» → родное Сбер-ТВ |
+|---|---|
+| ![Настройки](docs/screenshots/settings-currencies.png) | ![Телеканалы](docs/screenshots/live-tv.png) |
+
+| Все приложения (там же «СберTube») | Заставка |
+|---|---|
+| ![Приложения](docs/screenshots/all-apps.png) | ![Заставка](docs/screenshots/screensaver.png) |
+
+| СберTube |
+|---|
+| ![СберTube](docs/screenshots/sbertube.png) |
+
 ## Проверено на
 
 | | |
