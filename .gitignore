@@ -1,0 +1,6 @@
+out/
+*.apk
+*.idsig
+*.keystore
+freemytv.keystore
+sberstop.keystore
