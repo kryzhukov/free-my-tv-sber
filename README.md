@@ -3,6 +3,16 @@
 Сборка [Free My TV](https://github.com/simbasjungles/free-my-tv) с исправлениями под телевизоры **Salute TV (Сбер)**
 и отдельное приложение **«Сбер-Стоп»**, которое не даёт телевизору вернуть отключённые приложения Сбера.
 
+## Проверено на
+
+| | |
+|---|---|
+| Устройство | Сбер «Салют ТВ» — модель **SaluteTV** (`ro.product.model=SaluteTV`, `ro.product.name=SaluteTV`) |
+| Плата / чип | MediaTek **MT5867**, `ro.board.platform=mt5867`, `ro.product.board=mt5867_eu` (шасси CVTE) |
+| Процессор | 32-бит ARM (`armeabi-v7a`), экран 1280×720, плотность 213 dpi |
+| Система | Android 11 (SDK 30), сборка `RP1A.200720.011`, `ro.build.tags=dev-keys` |
+| Пульт | родной Bluetooth-пульт Сбера (`4B10`) + приложение-пульт с телефона |
+
 ## Что внутри
 
 | Папка | Что это |
