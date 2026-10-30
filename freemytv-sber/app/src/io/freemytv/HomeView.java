@@ -2775,8 +2775,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         // Drawer open: the background lightens (by day) or darkens (at night), as a filter on the drawing itself.
         android.graphics.ColorFilter v = veil(tone(0.32f, 0.42f) * Ui.clamp(drawer.value), blend(0xFFFFFFFF, 0xFF000000, night));
         if (bgTo == null || (fading && bgFrom == null)) {
-            if (lightGradient == null) lightGradient = Ui.gradient(h, 0xFFF5F5F7, 0xFFE2E2E7);
-            if (nightGradient == null) nightGradient = Ui.gradient(h, 0xFF1C1C1E, 0xFF0B0B0D);
+            if (lightGradient == null) lightGradient = Ui.gradient(h, 0xFFE9F0F8, 0xFFDFE7F2, 0xFFD2DCED);
+            if (nightGradient == null) nightGradient = Ui.gradient(h, 0xFF141C38, 0xFF0D1224, 0xFF060812);
             fill.setColorFilter(v);
             fill.setColor(0xFF000000);
             if (night < 0.999f) {

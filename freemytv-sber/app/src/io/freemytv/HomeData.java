@@ -37,8 +37,12 @@ final class HomeData {
     static final String[] COINS = {"USD", "EUR", "CNY", "TRY"};
     /** Names as the settings and the quotes card say them (translated through Ui.tr). */
     static final String[] COIN_NAMES = {"US Dollar", "Euro", "Chinese Yuan", "Turkish Lira"};
-    /** The Central Bank's daily rates as JSON (a UTF-8 mirror of cbr.ru; no key). */
-    private static final String RATES_URL = "https://www.cbr-xml-daily.ru/daily_json.js";
+    /** The Central Bank's daily rates as JSON (a UTF-8 mirror of cbr.ru; no key) with reliable fallback mirrors. */
+    private static final String[] RATES_URLS = {
+        "https://www.cbr-xml-daily.ru/daily_json.js",
+        "https://cbr-xml-daily.ru/daily_json.js",
+        "https://open.er-api.com/v6/latest/RUB"
+    };
     private static final String WEATHER_QUERY = "&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset"
             + "&hourly=temperature_2m,weather_code,is_day&timezone=auto&forecast_days=2";
 
@@ -86,7 +90,16 @@ final class HomeData {
     }
 
     private static String getRates() throws IOException {
-        return get(RATES_URL);
+        IOException last = null;
+        for (String url : RATES_URLS) {
+            try {
+                return get(url);
+            } catch (IOException e) {
+                last = e;
+                AppLog.w("rates fetch failed for " + url + ": " + e.getMessage());
+            }
+        }
+        throw last != null ? last : new IOException("no rates available");
     }
 
     static final class Weather {
@@ -144,17 +157,20 @@ final class HomeData {
     /** Fetches whatever is stale. The screen calls this when it appears and every minute while it's visible. */
     void refreshIfStale() {
         long now = System.currentTimeMillis();
+        boolean hasPrices = !Double.isNaN(prices[0]);
         // A negative age (the TV's clock went back) counts as stale: otherwise the data would freeze.
-        if (!fetchingPrices && coinCount() > 0 && (now - pricesAt > PRICES_EVERY || now < pricesAt) && !failedRecently(pricesFailedAt, now)) {
+        if (!fetchingPrices && coinCount() > 0 && (!hasPrices || now - pricesAt > PRICES_EVERY || now < pricesAt)
+                && !failedRecently(pricesFailedAt, now, hasPrices)) {
             fetchingPrices = true;
             io.execute(() -> {
                 try {
                     String body = getRates();
                     parsePrices(body);
                     pricesAt = System.currentTimeMillis();
+                    pricesFailedAt = 0;
                     cache.edit().putString("rates", body).putLong("ratesAt", pricesAt).apply();
                     notifyListeners();
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     pricesFailedAt = System.currentTimeMillis();
                     AppLog.w("rates: " + e.getMessage());
                 } finally {
@@ -162,13 +178,16 @@ final class HomeData {
                 }
             });
         }
-        if (!fetchingWeather && (now - weatherAt > WEATHER_EVERY || now < weatherAt) && !failedRecently(weatherFailedAt, now)) {
+        boolean hasWeather = !Double.isNaN(weather.temp);
+        if (!fetchingWeather && (!hasWeather || now - weatherAt > WEATHER_EVERY || now < weatherAt)
+                && !failedRecently(weatherFailedAt, now, hasWeather)) {
             fetchingWeather = true;
             io.execute(() -> {
                 try {
                     String body = get(weatherUrl());
                     weather = parseWeather(body);
                     weatherAt = System.currentTimeMillis();
+                    weatherFailedAt = 0;
                     cache.edit().putString("weather", body).putLong("weatherAt", weatherAt).putString("weatherPlace", weatherPlace()).apply();
                     notifyListeners();
                 } catch (Exception e) {
@@ -181,8 +200,10 @@ final class HomeData {
         }
     }
 
-    private static boolean failedRecently(long at, long now) {
-        return at != 0 && now >= at && now - at < 2 * 60_000L;
+    private static boolean failedRecently(long at, long now, boolean hasData) {
+        if (at == 0 || now < at) return false;
+        long wait = hasData ? 3 * 60_000L : 20_000L;
+        return now - at < wait;
     }
 
     private void notifyListeners() {
@@ -190,23 +211,34 @@ final class HomeData {
     }
 
     /**
-     * The Central Bank's daily rates: roubles per one unit of the currency and the change against the previous
-     * business day. JSON: {"Valute": {"USD": {"Nominal": 1, "Value": 92.4, "Previous": 92.1}, ...}}.
+     * Daily rates: roubles per one unit of currency and change against previous day.
+     * Supports both Central Bank of Russia JSON format (with "Valute") and open exchange rates fallback (with "rates").
      */
     private void parsePrices(String body) throws Exception {
-        JSONObject valute = new JSONObject(body).getJSONObject("Valute");
-        for (int k = 0; k < COINS.length; k++) {
-            JSONObject o = valute.optJSONObject(COINS[k]);
-            if (o == null) {
-                prices[k] = Double.NaN;
-                changes[k] = Double.NaN;
-                continue;
+        JSONObject root = new JSONObject(body);
+        if (root.has("Valute")) {
+            JSONObject valute = root.getJSONObject("Valute");
+            for (int k = 0; k < COINS.length; k++) {
+                JSONObject o = valute.optJSONObject(COINS[k]);
+                if (o == null) {
+                    prices[k] = Double.NaN;
+                    changes[k] = Double.NaN;
+                    continue;
+                }
+                double nominal = o.optDouble("Nominal", 1);
+                double value = o.optDouble("Value", Double.NaN);
+                double previous = o.optDouble("Previous", Double.NaN);
+                prices[k] = nominal > 0 ? value / nominal : value;   // yuan and lira come per 10 units sometimes
+                changes[k] = previous > 0 ? (value - previous) / previous * 100 : Double.NaN;
             }
-            double nominal = o.optDouble("Nominal", 1);
-            double value = o.optDouble("Value", Double.NaN);
-            double previous = o.optDouble("Previous", Double.NaN);
-            prices[k] = nominal > 0 ? value / nominal : value;   // yuan and lira come per 10 units sometimes
-            changes[k] = previous > 0 ? (value - previous) / previous * 100 : Double.NaN;
+        } else if (root.has("rates")) {
+            JSONObject rates = root.getJSONObject("rates");
+            for (int k = 0; k < COINS.length; k++) {
+                double perRub = rates.optDouble(COINS[k], Double.NaN);
+                if (!Double.isNaN(perRub) && perRub > 0) {
+                    prices[k] = 1.0 / perRub;
+                }
+            }
         }
     }
 
@@ -272,9 +304,10 @@ final class HomeData {
 
     private static String get(String url) throws IOException {
         HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-        c.setConnectTimeout(6000);
-        c.setReadTimeout(6000);
-        c.setRequestProperty("User-Agent", "FreeMyTV");
+        c.setConnectTimeout(10000);
+        c.setReadTimeout(10000);
+        c.setInstanceFollowRedirects(true);
+        c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 11; SaluteTV) AppleWebKit/537.36 FreeMyTV");
         try {
             if (c.getResponseCode() != 200) throw new IOException("HTTP " + c.getResponseCode());
             try (InputStream in = c.getInputStream()) {

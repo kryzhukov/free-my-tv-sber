@@ -367,6 +367,36 @@ final class Ui {
         return new BitmapShader(b, Shader.TileMode.REPEAT, Shader.TileMode.CLAMP);
     }
 
+    static Shader gradient(int height, int top, int mid, int bottom) {
+        int n = Math.max(2, height);
+        int[] px = new int[4 * n];
+        for (int y = 0; y < n; y++) {
+            float t = y / (float) (n - 1);
+            float segT;
+            int c1, c2;
+            if (t < 0.45f) {
+                segT = t / 0.45f;
+                c1 = top;
+                c2 = mid;
+            } else {
+                segT = (t - 0.45f) / 0.55f;
+                c1 = mid;
+                c2 = bottom;
+            }
+            for (int x = 0; x < 4; x++) {
+                float d = (BAYER[(y & 3) * 4 + x] + 0.5f) / 16f;
+                int c = 0;
+                for (int s = 0; s < 32; s += 8) {
+                    float a = (c1 >>> s) & 255, b = (c2 >>> s) & 255;
+                    c |= Math.min(255, (int) (a + (b - a) * segT + d)) << s;
+                }
+                px[y * 4 + x] = c;
+            }
+        }
+        Bitmap b = Bitmap.createBitmap(px, 4, n, Bitmap.Config.ARGB_8888);
+        return new BitmapShader(b, Shader.TileMode.REPEAT, Shader.TileMode.CLAMP);
+    }
+
     private static final Map<String, DatePattern> DATE_PATTERNS = new HashMap<>();
 
     /**
