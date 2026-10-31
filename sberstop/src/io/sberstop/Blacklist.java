@@ -21,14 +21,12 @@ final class Blacklist {
     static final String[] PACKAGES = {
             "ru.sberdevices.starcleaner",        // «Очистка памяти» Сбера
             "ru.sberdevices.smarthome.promo",    // промо «Умного дома»
-            "ru.sberdevices.starbrowser",        // браузер Сбера
             "ru.sberdevices.openbeta",           // бета-программа (канал обновлений)
             "ru.sberdevices.survey",             // опросы
             "ru.sberdevices.starmarket",         // магазин приложений Сбера
             "ru.sberdevices.videos",             // «Видео»
             "ru.sberdevices.music",              // «Музыка»
             "ru.sberdevices.sberplay",           // SberPlay
-            "ru.sberdevices.starprofile",        // профиль
             "ru.sberdevices.subscriptions",      // подписки
             "ru.sberdevices.parentcontrol",      // родительский контроль
             "ru.sberdevices.starkidsroom.prod",  // детская комната
