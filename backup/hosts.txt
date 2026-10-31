@@ -1,0 +1,7 @@
+﻿127.0.0.1       localhost
+::1             ip6-localhost
+127.0.0.1       myou.cvte.com
+127.0.0.1       cvte.myou.com
+127.0.0.1       ota.sberdevices.ru
+127.0.0.1       updates.sberdevices.ru
+127.0.0.1       telemetry.sberdevices.ru

@@ -1,0 +1,5 @@
+﻿on post-fs-data
+    exec_background - root root -- /system/bin/mount_usb_apps.sh
+
+on property:sys.boot_completed=1
+    exec_background - root root -- /system/bin/mount_usb_apps.sh
