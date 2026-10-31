@@ -61,6 +61,12 @@ final class Blacklist {
             adb.shell("settings put global ota_disable_automatic_update 1");
             adb.shell("settings put global auto_update_apps 0");
             adb.shell("appops set ru.sberdevices.services SYSTEM_ALERT_WINDOW deny");
+
+            // Очистка кэша приложений и сброс занятой оперативной памяти
+            adb.shell("pm trim-caches 9999999999");
+            adb.shell("rm -rf /data/anr/* /data/tombstones/* /data/system/dropbox/* /sdcard/.thumbnails/*");
+            adb.shell("sync");
+
             // Главный экран: Сбер после загрузки возвращает свой лаунчер и забирает Home себе (или сбрасывает выбор).
             String holder = homeHolder(adb);
             if (!"io.freemytv".equals(holder)) {
